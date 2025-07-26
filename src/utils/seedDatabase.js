@@ -2,27 +2,30 @@
  * Script to seed the database with test data
  */
 const { MongoClient } = require('mongodb');
-const dotenv = require('dotenv');
 
-// Load environment variables
-dotenv.config();
+// Import MongoDB configuration
+const mongoConfig = require('../config/mongodb.config');
+const { uri, options } = mongoConfig;
 
 // Sample user data
 const users = [
-  { name: 'John Doe', email: 'john@example.com', age: 30 },
-  { name: 'Jane Smith', email: 'jane@example.com', age: 25 },
-  { name: 'Bob Johnson', email: 'bob@example.com', age: 35 },
-  { name: 'Alice Brown', email: 'alice@example.com', age: 19 }, // Under 21, should not be returned
-  { name: 'Charlie Wilson', email: 'charlie@example.com', age: 21 }, // Exactly 21, should not be returned
-  { name: 'David Miller', email: 'david@example.com', age: 22 }, // Just over 21, should be returned
+  { name: 'John Doe', email: 'john@example.com', age: 30, occupation: 'Software Engineer' },
+  { name: 'Jane Smith', email: 'jane@example.com', age: 25, occupation: 'Product Manager' },
+  { name: 'Bob Johnson', email: 'bob@example.com', age: 35, occupation: 'Data Scientist' },
+  { name: 'Alice Brown', email: 'alice@example.com', age: 19, occupation: 'Student' }, // Under 21, should not be returned
+  { name: 'Charlie Wilson', email: 'charlie@example.com', age: 21, occupation: 'Intern' }, // Exactly 21, should not be returned
+  { name: 'David Miller', email: 'david@example.com', age: 22, occupation: 'Junior Developer' }, // Just over 21, should be returned
+  { name: 'Emily Davis', email: 'emily@example.com', age: 28, occupation: 'UX Designer' },
+  { name: 'Frank Thomas', email: 'frank@example.com', age: 42, occupation: 'Project Manager' },
+  { name: 'Grace Lee', email: 'grace@example.com', age: 31, occupation: 'Marketing Specialist' },
+  { name: 'Henry Wilson', email: 'henry@example.com', age: 20, occupation: 'Intern' }, // Under 21, should not be returned
 ];
 
 /**
  * Seed the database with test data
  */
 async function seedDatabase() {
-  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/centivo';
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, options);
 
   try {
     await client.connect();
