@@ -10,8 +10,9 @@ dotenv.config();
 // Import routes
 const userRoutes = require('./routes/userRoutes');
 
-// Import database connection
-const { connectToDatabase } = require('./config/database');
+// Import database connection and initialization
+const { connectToDatabase, checkConnection } = require('./config/database');
+const { initializeDatabase } = require('./config/dbInit');
 
 // Initialize express app
 const app = express();
@@ -27,8 +28,40 @@ app.use(express.json()); // Parse JSON bodies
 app.use('/users', userRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'API is running' });
+app.get('/health', async (req, res) => {
+  try {
+    // Check database connection
+    const dbConnected = await checkConnection();
+    
+    if (dbConnected) {
+      return res.status(200).json({
+        status: 'ok',
+        message: 'API is running',
+        database: {
+          connected: true,
+          message: 'Database connection is healthy'
+        },
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(503).json({
+        status: 'degraded',
+        message: 'API is running but database connection is not healthy',
+        database: {
+          connected: false,
+          message: 'Database connection failed'
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      status: 'error',
+      message: 'Health check failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // 404 handler for undefined routes
@@ -55,9 +88,14 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectToDatabase();
     
+    // Initialize database collections and indexes
+    await initializeDatabase();
+    
     // Start listening for requests
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`Health check available at http://localhost:${PORT}/health`);
+      console.log(`API endpoint available at http://localhost:${PORT}/users/:id`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
