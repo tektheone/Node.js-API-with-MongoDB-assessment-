@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../config/database');
+const { badRequest } = require('../utils/errorHandler');
 
 /**
  * User Model - Handles all database operations related to users
@@ -21,12 +22,7 @@ class UserModel {
    */
   static async findById(id) {
     try {
-      // Validate ObjectId format
-      if (!ObjectId.isValid(id)) {
-        const error = new Error('Invalid user ID format');
-        error.statusCode = 400;
-        throw error;
-      }
+      // Validation is now handled by middleware
 
       const collection = this.getUserCollection();
       

@@ -1,4 +1,5 @@
 const UserModel = require('../models/userModel');
+const { notFound } = require('../utils/errorHandler');
 
 /**
  * User Controller - Handles all user-related API requests
@@ -19,10 +20,7 @@ class UserController {
       
       // If user not found or age <= 21, return 404
       if (!user) {
-        return res.status(404).json({
-          error: true,
-          message: 'User not found or does not meet age requirements'
-        });
+        return next(notFound('User not found or does not meet age requirements'));
       }
       
       // Return user data
