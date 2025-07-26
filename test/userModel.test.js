@@ -96,4 +96,162 @@ describe('UserModel', () => {
       expect(user).toBeNull();
     });
   });
+  
+  describe('findByAgeFilter', () => {
+    it('should find users with age > minAge', async () => {
+      // Insert test users with different ages
+      const testUsers = [
+        { name: 'User 1', email: 'user1@example.com', age: 25 },
+        { name: 'User 2', email: 'user2@example.com', age: 30 },
+        { name: 'User 3', email: 'user3@example.com', age: 20 },
+        { name: 'User 4', email: 'user4@example.com', age: 35 }
+      ];
+      await usersCollection.insertMany(testUsers);
+      
+      // Find users with age > 22
+      const users = await UserModel.findByAgeFilter(22, 10);
+      
+      // Assertions
+      expect(users).toHaveLength(3); // Only 3 users have age > 22
+      expect(users.map(u => u.age)).toEqual(expect.arrayContaining([25, 30, 35]));
+    });
+    
+    it('should respect the limit parameter', async () => {
+      // Insert test users with different ages
+      const testUsers = [
+        { name: 'User 1', email: 'user1@example.com', age: 25 },
+        { name: 'User 2', email: 'user2@example.com', age: 30 },
+        { name: 'User 3', email: 'user3@example.com', age: 35 },
+        { name: 'User 4', email: 'user4@example.com', age: 40 }
+      ];
+      await usersCollection.insertMany(testUsers);
+      
+      // Find users with age > 22 with limit 2
+      const users = await UserModel.findByAgeFilter(22, 2);
+      
+      // Assertions
+      expect(users).toHaveLength(2); // Only 2 users due to limit
+    });
+    
+    it('should return empty array if no users match criteria', async () => {
+      // Insert test users with ages <= 21
+      const testUsers = [
+        { name: 'User 1', email: 'user1@example.com', age: 18 },
+        { name: 'User 2', email: 'user2@example.com', age: 20 },
+        { name: 'User 3', email: 'user3@example.com', age: 21 }
+      ];
+      await usersCollection.insertMany(testUsers);
+      
+      // Find users with age > 21
+      const users = await UserModel.findByAgeFilter(21, 10);
+      
+      // Assertions
+      expect(users).toHaveLength(0);
+      expect(users).toEqual([]);
+    });
+  });
+  
+  describe('create', () => {
+    it('should create a new user with valid data', async () => {
+      // User data
+      const userData = { 
+        name: 'New User', 
+        email: 'newuser@example.com', 
+        age: 25,
+        occupation: 'Developer'
+      };
+      
+      // Create user
+      const user = await UserModel.create(userData);
+      
+      // Assertions
+      expect(user).toBeTruthy();
+      expect(user._id).toBeTruthy();
+      expect(user.name).toBe(userData.name);
+      expect(user.email).toBe(userData.email);
+      expect(user.age).toBe(userData.age);
+      expect(user.occupation).toBe(userData.occupation);
+      
+      // Verify user was saved to database
+      const savedUser = await usersCollection.findOne({ email: userData.email });
+      expect(savedUser).toBeTruthy();
+    });
+    
+    it('should throw error when required fields are missing', async () => {
+      // Missing required fields
+      const invalidUserData = { name: 'Invalid User' };
+      
+      // Try to create user
+      await expect(UserModel.create(invalidUserData))
+        .rejects.toThrow('Name, email, and age are required fields');
+    });
+    
+    it('should throw error for invalid age format', async () => {
+      // Invalid age format
+      const invalidUserData = { 
+        name: 'Invalid User', 
+        email: 'invalid@example.com', 
+        age: 'twenty-five'
+      };
+      
+      // Try to create user
+      await expect(UserModel.create(invalidUserData))
+        .rejects.toThrow('Age must be a number');
+    });
+    
+    it('should throw error for duplicate email', async () => {
+      // Create first user
+      const userData = { 
+        name: 'First User', 
+        email: 'duplicate@example.com', 
+        age: 30
+      };
+      await UserModel.create(userData);
+      
+      // Try to create second user with same email
+      const duplicateUserData = { 
+        name: 'Second User', 
+        email: 'duplicate@example.com', 
+        age: 35
+      };
+      
+      await expect(UserModel.create(duplicateUserData))
+        .rejects.toThrow('A user with this email already exists');
+    });
+  });
+  
+  describe('countByAgeFilter', () => {
+    it('should count users with age > minAge', async () => {
+      // Insert test users with different ages
+      const testUsers = [
+        { name: 'User 1', email: 'user1@example.com', age: 25 },
+        { name: 'User 2', email: 'user2@example.com', age: 30 },
+        { name: 'User 3', email: 'user3@example.com', age: 20 },
+        { name: 'User 4', email: 'user4@example.com', age: 35 },
+        { name: 'User 5', email: 'user5@example.com', age: 21 }
+      ];
+      await usersCollection.insertMany(testUsers);
+      
+      // Count users with age > 21
+      const count = await UserModel.countByAgeFilter(21);
+      
+      // Assertions
+      expect(count).toBe(3); // Only 3 users have age > 21
+    });
+    
+    it('should return 0 if no users match criteria', async () => {
+      // Insert test users with ages <= 30
+      const testUsers = [
+        { name: 'User 1', email: 'user1@example.com', age: 25 },
+        { name: 'User 2', email: 'user2@example.com', age: 30 }
+      ];
+      await usersCollection.insertMany(testUsers);
+      
+      // Count users with age > 30
+      const count = await UserModel.countByAgeFilter(30);
+      
+      // Assertions
+      expect(count).toBe(0);
+    });
+  });
 });
