@@ -31,12 +31,21 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'API is running' });
 });
 
+// 404 handler for undefined routes
+app.use((req, res, next) => {
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  error.statusCode = 404;
+  next(error);
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.statusCode || 500).json({
     error: true,
     message: err.message || 'Internal Server Error',
+    path: req.path,
+    timestamp: new Date().toISOString(),
   });
 });
 
